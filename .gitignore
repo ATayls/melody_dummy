@@ -1,3 +1,8 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -19,6 +24,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# Custom ignores
+# Operating System Files
+.DS_Store
+
+# Custom ignores for your project
 config/config.yaml   # Ignore config file containing sensitive data
-*.db                 # Ignore database files
+*.db
