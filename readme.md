@@ -1,5 +1,3 @@
----
-
 # MELODY
 
 ## Environment Setup
@@ -21,5 +19,3 @@ Ensure correct Python version: `poetry run python --version`
 ## Jupyter Notebooks
 1. **Install Jupyter**: `poetry add jupyter` (if not in `pyproject.toml`)
 2. **Start Notebook**: `poetry run jupyter notebook`
-
----
