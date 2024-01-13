@@ -1,0 +1,12 @@
+database:
+  db_filename: 'hospital_data.db'
+  overwrite: True
+
+dummy_data:
+  n_patients: 10000
+  start_date: '2021-01-01'
+  end_date: '2022-01-01'
+  infection_chance: 0.5
+  therapeutic_chance: 0.2
+  hospitalisation_chance: 0.5
+  death_chance: 0.3

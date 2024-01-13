@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "melody_dummy"
+version = "0.1.0"
+description = "database interface to melody data"
+authors = ["Adam Taylor <adam.taylor@nottingham.ac.uk>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "^2.1.4"
+SQLAlchemy = "^2.0.25"
+PyYAML = "^6.0.1"
+numpy = "^1.26.3"
+jupyter = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,24 @@
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pycharm
+.idea/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+
+# Custom ignores
+config/config.yaml   # Ignore config file containing sensitive data
+*.db                 # Ignore database files
