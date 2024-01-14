@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import relationship
 
 from melody_dummy.database.db_utils import DBEngineContextManager
 
@@ -9,53 +10,75 @@ Base = declarative_base()
 
 # Define the Patients table
 class Patients(Base):
-    __tablename__ = 'Patients'
-    NEWNHSNO = Column(Integer, primary_key=True, unique=True)
+    __tablename__ = 'patients'
+    NEWNHSNO = Column(Integer, primary_key=True)
     ABDATE = Column(Date, nullable=False)
     ABDATE_6MONTHS = Column(Date, nullable=False)
-    COHORT = Column(String, nullable=False)
+    COHORT = Column(String(2), nullable=False)
     AB_STATUS = Column(Boolean, nullable=False)
+
+    # Relationships
+    demographics = relationship("Demographics", back_populates="patient", uselist=False)
+    infections = relationship("Infections", back_populates="patient")
+    therapeutics = relationship("Therapeutics", back_populates="patient")
+    hospitalisations = relationship("Hospitalisations", back_populates="patient")
+    death = relationship("Deaths", back_populates="patient", uselist=False)
 
 # Define the Demographics table
 class Demographics(Base):
-    __tablename__ = 'Demographics'
-    NEWNHSNO = Column(Integer, ForeignKey('Patients.NEWNHSNO'), primary_key=True, unique=True)
+    __tablename__ = 'demographics'
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
     DOB = Column(Date, nullable=False)
-    SEX = Column(String, nullable=False)
+    SEX = Column(String(10), nullable=False)
+
+    # Relationship
+    patient = relationship("Patients", back_populates="demographics")
+
+
 
 # Define the Infections table
 class Infections(Base):
-    __tablename__ = 'Infections'
-    NEWNHSNO = Column(Integer, ForeignKey('Patients.NEWNHSNO'), primary_key=True)
+    __tablename__ = 'infections'
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
     SPECIMEN_DATE = Column(Date, nullable=False)
     EPISODE_NUM = Column(Integer, nullable=False)
     INFECTION_NUM = Column(Integer, nullable=False)
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'EPISODE_NUM', 'INFECTION_NUM'),)
 
+    # Relationship
+    patient = relationship("Patients", back_populates="infections")
+
 # Define the Therapeutics table
 class Therapeutics(Base):
-    __tablename__ = 'Therapeutics'
-    NEWNHSNO = Column(Integer, ForeignKey('Patients.NEWNHSNO'), primary_key=True)
+    __tablename__ = 'therapeutics'
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
     RECEIVED = Column(Date, nullable=False)
-    INTERVENTION = Column(String, nullable=False)
+    INTERVENTION = Column(String(20), nullable=False)
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'RECEIVED', 'INTERVENTION'),)
+
+    # Relationship
+    patient = relationship("Patients", back_populates="therapeutics")
 
 # Define the Hospitalisations table
 class Hospitalisations(Base):
-    __tablename__ = 'Hospitalisations'
-    NEWNHSNO = Column(Integer, ForeignKey('Patients.NEWNHSNO'), primary_key=True)
+    __tablename__ = 'hospitalisations'
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
     ADMIDATE_DV = Column(Date, nullable=False)
     EPISODE_COUNT = Column(Integer, nullable=False)
-    ADMI_LEN = Column(Integer)
+    ADMI_LEN = Column(Integer, nullable=True)  # Specify nullable explicitly if nulls are acceptable
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'ADMIDATE_DV'),)
+
+    # Relationship
+    patient = relationship("Patients", back_populates="hospitalisations")
 
 # Define the Deaths table
 class Deaths(Base):
-    __tablename__ = 'Deaths'
-    NEWNHSNO = Column(Integer, ForeignKey('Patients.NEWNHSNO'), primary_key=True, unique=True)
+    __tablename__ = 'deaths'
+    NEWNHSNO = Column(
+        Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
     DOD = Column(Date, nullable=False)
-    ICDU_GROUP = Column(String)
-    ICD10 = Column(String)
+    ICDU_GROUP = Column(String(50), nullable=True)
+    ICD10 = Column(String(5), nullable=True)
     COVID_MENTIONED = Column(Boolean, nullable=False)
     COVID_UNDERLYING = Column(Boolean, nullable=False)
 
@@ -63,6 +86,9 @@ class Deaths(Base):
         CheckConstraint('NOT COVID_UNDERLYING OR COVID_MENTIONED',
                         name='check_covid_mentioned_if_underlying'),
     )
+
+    # Relationship
+    patient = relationship("Patients", back_populates="death")
 
 
 # Function to create the database and tables
