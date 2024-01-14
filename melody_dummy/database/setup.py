@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
 
@@ -58,6 +58,11 @@ class Deaths(Base):
     ICD10 = Column(String)
     COVID_MENTIONED = Column(Boolean, nullable=False)
     COVID_UNDERLYING = Column(Boolean, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint('NOT COVID_UNDERLYING OR COVID_MENTIONED',
+                        name='check_covid_mentioned_if_underlying'),
+    )
 
 
 # Function to create the database and tables
