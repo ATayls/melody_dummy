@@ -80,7 +80,7 @@ def populate_deaths(hospitalisations, chance=0.3):
                 'NEWNHSNO': row['NEWNHSNO'],
                 'DOD': row['ADMIDATE_DV'] + timedelta(days=np.random.randint(1, 30)),
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
-                'ICD10': 'ICD10-' + str(np.random.randint(1, 100)),
+                'ICD10': 'ICD' + str(np.random.randint(10, 99)),
                 'COVID_MENTIONED': covid_mentioned,
                 'COVID_UNDERLYING': (np.random.choice([True,
                                      False]) if covid_mentioned else False)
