@@ -1,6 +1,23 @@
 database:
-  db_filename: 'hospital_data_2.db'
-  overwrite: True
+  db_filename: 'study_database.db'
+  overwrite: False
+
+ingestion_pipeline:
+  use_dummy_data: True
+  debug: True
+  code_list:
+    - 'U071'
+    - 'U072'
+  hes_primary_diagnosis_only: False
+  hes_remove_less_than_24hr_stays: False
+
+raw_data:
+  survey_path_bc: "None"
+  survey_path_rd: "None"
+  blueteq_path: "None"
+  sgss_path: "None"
+  mbis_path: "None"
+  hes_apc_path: "None"
 
 dummy_data:
   n_patients: 10000
