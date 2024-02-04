@@ -9,6 +9,7 @@ from database.db_utils import DBEngineContextManager
 # Define the base class
 Base = declarative_base()
 
+
 # Define the Patients table
 class Patients(Base):
     __tablename__ = 'patients'
@@ -25,6 +26,7 @@ class Patients(Base):
     hospitalisations = relationship("Hospitalisations", back_populates="patient")
     death = relationship("Deaths", back_populates="patient", uselist=False)
 
+
 # Define the Demographics table
 class Demographics(Base):
     __tablename__ = 'demographics'
@@ -34,7 +36,6 @@ class Demographics(Base):
 
     # Relationship
     patient = relationship("Patients", back_populates="demographics")
-
 
 
 # Define the Infections table
@@ -49,6 +50,7 @@ class Infections(Base):
     # Relationship
     patient = relationship("Patients", back_populates="infections")
 
+
 # Define the Therapeutics table
 class Therapeutics(Base):
     __tablename__ = 'therapeutics'
@@ -59,6 +61,7 @@ class Therapeutics(Base):
 
     # Relationship
     patient = relationship("Patients", back_populates="therapeutics")
+
 
 # Define the Hospitalisations table
 class Hospitalisations(Base):
@@ -72,11 +75,11 @@ class Hospitalisations(Base):
     # Relationship
     patient = relationship("Patients", back_populates="hospitalisations")
 
+
 # Define the Deaths table
 class Deaths(Base):
     __tablename__ = 'deaths'
-    NEWNHSNO = Column(
-        Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
     DOD = Column(Date, nullable=False)
     ICDU_GROUP = Column(String(50), nullable=True)
     ICD10 = Column(String(5), nullable=True)

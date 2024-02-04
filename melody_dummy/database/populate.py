@@ -22,5 +22,6 @@ def populate_db_with_dataframes(df_dict: dict, conn_string: str):
     """Populate the database with data from a dictionary of DataFrames."""
     with DBEngineContextManager(conn_string) as engine:
         for table_name, df in df_dict.items():
-            print(f"Inserting {table_name} data")
+            print(f"\nInserting {table_name} data")
+            print(f"Columns: {df.columns}")
             insert_dataframe_to_table(df, table_name, engine, if_exists='append')

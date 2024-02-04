@@ -31,6 +31,7 @@ def get_days_between_hospitalisation_and_earliest_infection(conn_string):
 
     return sql_read_to_pandas(sql_query, conn_string)
 
+
 def get_hospitalisations_post_infection_within_days(conn_string, days):
     """
     Retrieves hospitalisations that occur within a specified number of days after an infection.

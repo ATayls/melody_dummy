@@ -111,8 +111,9 @@ def datetime_cols_to_date(df):
     return df
 
 
-def create_dummy_dataframes(n_patients=10000, start_date='2021-01-01',
-                       end_date='2022-01-01') -> dict:
+def create_dummy_dataframes(
+        n_patients=10000, start_date='2021-01-01', end_date='2022-01-01'
+) -> dict:
     """Create dummy data for the project."""
 
     # Load config file
