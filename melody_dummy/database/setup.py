@@ -15,7 +15,7 @@ class Patients(Base):
     __tablename__ = 'patients'
     NEWNHSNO = Column(Integer, primary_key=True)
     ABDATE = Column(Date, nullable=False)
-    ABDATE_6MONTHS = Column(Date, nullable=False)
+    ABDATE_6M = Column(Date, nullable=False)
     COHORT = Column(String(2), nullable=False)
     AB_STATUS = Column(Boolean, nullable=False)
 
@@ -45,6 +45,7 @@ class Infections(Base):
     SPECIMEN_DATE = Column(Date, nullable=False)
     EPISODE_NUM = Column(Integer, nullable=False)
     INFECTION_NUM = Column(Integer, nullable=False)
+    DAYS_SINCE_EPISODE_START = Column(Integer, nullable=False)
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'EPISODE_NUM', 'INFECTION_NUM'),)
 
     # Relationship
@@ -67,10 +68,19 @@ class Therapeutics(Base):
 class Hospitalisations(Base):
     __tablename__ = 'hospitalisations'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
-    ADMIDATE_DV = Column(Date, nullable=False)
+    ADMIDATE_DV = Column(Date, nullable=False, primary_key=True)  # Make ADMIDATE_DV part of the primary key
+    DISDATE_DV = Column(Date, nullable=False)
     EPISODE_COUNT = Column(Integer, nullable=False)
     ADMI_LEN = Column(Integer, nullable=True)  # Specify nullable explicitly if nulls are acceptable
-    __table_args__ = (UniqueConstraint('NEWNHSNO', 'ADMIDATE_DV'),)
+    ADMI_LEN_BINNED = Column(String(20))
+    xDIAGCONCAT = Column(String(512))
+    xOPERCONCAT = Column(String(512))
+    DIAG_CODE_MATCH = Column(Boolean)
+    CC_ADMI = Column(Boolean)
+    CCLevel2 = Column(Integer)
+    CCLevel3 = Column(Integer)
+    CCBasicResp = Column(Integer)
+    CCAdvancedResp = Column(Integer)
 
     # Relationship
     patient = relationship("Patients", back_populates="hospitalisations")
@@ -81,6 +91,8 @@ class Deaths(Base):
     __tablename__ = 'deaths'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
     DOD = Column(Date, nullable=False)
+    DOB = Column(Date, nullable=False)
+    AGEC = Column(Integer, nullable=False)
     ICDU_GROUP = Column(String(50), nullable=True)
     ICD10 = Column(String(5), nullable=True)
     COVID_MENTIONED = Column(Boolean, nullable=False)

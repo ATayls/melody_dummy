@@ -14,7 +14,7 @@ def create_patients_and_demographics(n, start_date='2020-01-01', end_date='2023-
         'COHORT': np.random.choice(['RD', 'BC'], n),
         'AB_STATUS': np.random.choice([True, False], n)
     })
-    patients['ABDATE_6MONTHS'] = patients['ABDATE'] + timedelta(days=180)
+    patients['ABDATE_6M'] = patients['ABDATE'] + timedelta(days=180)
 
     demographics = pd.DataFrame({
         'NEWNHSNO': range(1, n+1),
@@ -88,17 +88,17 @@ def populate_deaths(hospitalisations, chance=0.3):
     return pd.DataFrame(deaths)
 
 
-def drop_rows_outside_study_period(df, patient_df, date_col, study_end_col='ABDATE_6MONTHS'):
+def drop_rows_outside_study_period(df, patient_df, date_col, study_end_col='ABDATE_6M'):
     """Drop rows from df that occur outside the study period."""
 
-    # Merging patients with other tables to filter based on ABDATE_6MONTHS
+    # Merging patients with other tables to filter based on ABDATE_6M
     df = df.merge(patient_df[['NEWNHSNO', study_end_col]], on='NEWNHSNO')
 
-    # Filtering rows where events occur after ABDATE_6MONTHS
+    # Filtering rows where events occur after ABDATE_6M
     mask = df[date_col] <= df[study_end_col]
     df = df[mask]
 
-    # Dropping the ABDATE_6MONTHS column as it's no longer needed
+    # Dropping the ABDATE_6M column as it's no longer needed
     df.drop(study_end_col, axis=1, inplace=True)
     return df
 
