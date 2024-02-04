@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import timedelta
 
-from melody_dummy.utils import load_config
+from utils import load_config
 
 
 def create_patients_and_demographics(n, start_date='2020-01-01', end_date='2023-01-01'):

@@ -3,7 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import relationship
 
-from melody_dummy.database.db_utils import DBEngineContextManager
+from database.db_utils import DBEngineContextManager
+
 
 # Define the base class
 Base = declarative_base()

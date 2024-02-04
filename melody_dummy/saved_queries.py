@@ -1,4 +1,4 @@
-from db_utils import sql_read_to_pandas
+from database.db_utils import sql_read_to_pandas
 
 
 def get_all_patients(conn_string):
