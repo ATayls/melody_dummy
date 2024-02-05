@@ -210,21 +210,63 @@ def populate_hospitalisations(patients, chance=0.2):
 
 
 def populate_deaths(hospitalisations, chance=0.3):
-    """Populate Table 6 (Deaths) based on hospitalisations data."""
+    """
+    Populate Table 6 (Deaths) based on hospitalisations data.
+    Assumption in dummy data that only those that have been hospitalised can die.
+    """
+    last_hospitalisations = hospitalisations.copy(
+        deep=True
+    ).sort_values(
+        by=['NEWNHSNO', 'ADMIDATE_DV'], ascending=False
+    ).drop_duplicates(
+        subset=['NEWNHSNO']
+    )
+
     deaths = []
-    for idx, row in hospitalisations.iterrows():
+    for idx, row in last_hospitalisations.iterrows():
         if np.random.rand() < chance:
-            covid_mentioned = np.random.choice([True, False])
+            code_list = ['U071']
+            icd10 = generate_icd10_list(
+                length=1,
+                sample_codes=code_list,
+                sample_chance=0.2
+            )[0]
+            covid_mentioned = icd10 in code_list
             deaths.append({
                 'NEWNHSNO': row['NEWNHSNO'],
                 'DOD': row['ADMIDATE_DV'] + timedelta(days=np.random.randint(1, 30)),
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
-                'ICD10': 'ICD' + str(np.random.randint(10, 99)),
+                'ICD10': icd10,
                 'COVID_MENTIONED': covid_mentioned,
                 'COVID_UNDERLYING': (np.random.choice([True,
                                      False]) if covid_mentioned else False)
             })
     return pd.DataFrame(deaths)
+
+
+def drop_events_after_deaths(event_df_in, deaths_df_in, event_date_col, death_date_col='DOD'):
+    """
+    Drop event dates that occurred after a death.
+
+    Parameters:
+    - event_df_in: DataFrame containing events.
+    - deaths_df_in: DataFrame containing death records.
+    - event_date_col: The name of the column in event_df that contains the event dates.
+    - death_date_col: The name of the column in deaths_df that contains the death dates. Defaults to 'DOD'.
+
+    Returns:
+    - A DataFrame containing only the events that occurred on or before the death dates.
+    """
+    # Create copies to avoid inplace edits
+    event_df = event_df_in.copy(deep=True)
+    deaths_df = deaths_df_in.copy(deep=True)
+
+    # Merge and filter
+    merged_df = pd.merge(event_df, deaths_df[['NEWNHSNO', death_date_col]], on='NEWNHSNO', how='left')
+    filtered_df = merged_df[merged_df[event_date_col] <= merged_df[death_date_col]]
+
+    # Drop the death date column from the filtered dataframe to return to original event_df structure
+    return filtered_df[event_df_in.columns]
 
 
 def drop_rows_outside_study_period(df, patient_df, date_col, study_end_col='ABDATE_6M'):
@@ -288,6 +330,11 @@ def create_dummy_dataframes(
     therapeutics = datetime_cols_to_date(therapeutics)
     hospitalisations = datetime_cols_to_date(hospitalisations)
     deaths = datetime_cols_to_date(deaths)
+
+    # Drop events after deaths
+    infections = drop_events_after_deaths(infections, deaths, 'SPECIMEN_DATE')
+    therapeutics = drop_events_after_deaths(therapeutics, deaths, 'RECEIVED')
+    hospitalisations = drop_events_after_deaths(hospitalisations, deaths, 'ADMIDATE_DV')
 
     print("Dropping rows outside study period")
     infections = drop_rows_outside_study_period(infections, patients, 'SPECIMEN_DATE')
