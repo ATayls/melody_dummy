@@ -42,11 +42,10 @@ class Demographics(Base):
 class Infections(Base):
     __tablename__ = 'infections'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
-    SPECIMEN_DATE = Column(Date, nullable=False)
+    SPECIMEN_DATE = Column(Date, primary_key=True)  # Make SPECIMEN_DATE part of the primary key
     EPISODE_NUM = Column(Integer, nullable=False)
     INFECTION_NUM = Column(Integer, nullable=False)
     DAYS_SINCE_EPISODE_START = Column(Integer, nullable=False)
-    __table_args__ = (UniqueConstraint('NEWNHSNO', 'EPISODE_NUM', 'INFECTION_NUM'),)
 
     # Relationship
     patient = relationship("Patients", back_populates="infections")
