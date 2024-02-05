@@ -55,6 +55,7 @@ class Infections(Base):
 class Therapeutics(Base):
     __tablename__ = 'therapeutics'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
+    THERAPEUTIC_NUM = Column(Integer, nullable=False, primary_key=True) # Make SPECIMEN_NUM part of the primary key
     RECEIVED = Column(Date, nullable=False)
     INTERVENTION = Column(String(20), nullable=False)
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'RECEIVED', 'INTERVENTION'),)

@@ -84,12 +84,26 @@ def populate_infections(patients, chance=0.5):
 
 
 def populate_therapeutics(infections, chance=0.2):
-    """Populate Table 4 (Therapeutics) based on infections data."""
+    """
+    Populate Table 4 (Therapeutics) based on infections data.
+    Assumption is that only people who have registered positive test get an infection.
+    """
     therapeutics = []
-    for idx, row in infections.iterrows():
+
+    received_counts = {}
+
+    # Iterate through first infection episodes only.
+    for idx, row in infections[infections['INFECTION_NUM'] == 1].iterrows():
         if np.random.rand() < chance:
+
+            if row['NEWNHSNO'] in received_counts:
+                received_counts[row['NEWNHSNO']] += 1
+            else:
+                received_counts[row['NEWNHSNO']] = 1
+
             therapeutics.append({
                 'NEWNHSNO': row['NEWNHSNO'],
+                'THERAPEUTIC_NUM': received_counts[row['NEWNHSNO']],
                 'RECEIVED': row['SPECIMEN_DATE'] + timedelta(days=np.random.randint(
                     1, 5)),
                 'INTERVENTION': np.random.choice(['A', 'B', 'C', 'D', 'E', 'F'])
