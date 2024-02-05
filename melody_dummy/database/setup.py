@@ -91,8 +91,6 @@ class Deaths(Base):
     __tablename__ = 'deaths'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
     DOD = Column(Date, nullable=False)
-    DOB = Column(Date, nullable=False)
-    AGEC = Column(Integer, nullable=False)
     ICDU_GROUP = Column(String(50), nullable=True)
     ICD10 = Column(String(5), nullable=True)
     COVID_MENTIONED = Column(Boolean, nullable=False)
