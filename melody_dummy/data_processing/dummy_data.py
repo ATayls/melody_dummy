@@ -1,3 +1,5 @@
+from copy import copy
+
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -27,19 +29,59 @@ def create_patients_and_demographics(n, start_date='2020-01-01', end_date='2023-
 def populate_infections(patients, chance=0.5):
     """
     Populate Table 3 (Infections) based on patients data.
-    Currently Only one episode per patient.
-    Currently Only one infection per episode.
     """
     infections = []
     for idx, row in patients.iterrows():
-        if np.random.rand() < chance:
-            infections.append({
-                'NEWNHSNO': row['NEWNHSNO'],
-                'SPECIMEN_DATE': row['ABDATE'] + timedelta(days=np.random.randint(1, 180)),
-                'EPISODE_NUM': 1,
-                'INFECTION_NUM': 1
-            })
+
+        episode_start = None
+        episode_num = 1
+        infection_num = 1
+        current_date = row['ABDATE']
+        max_date = row['ABDATE'] + timedelta(days=179)
+
+        while np.random.rand() < chance:
+
+            # Set infection date
+            if episode_start is None:
+                infection_date = current_date + timedelta(days=np.random.randint(1, 180))
+                episode_start = copy(infection_date)
+            else:
+                infection_date = current_date + timedelta(days=np.random.randint(91, 180))
+
+            days_since_episode_start = (infection_date - episode_start).days
+
+            # New episode?
+            if days_since_episode_start > 91:
+                episode_start = copy(infection_date)
+                episode_num += 1
+                infection_num = 1
+
+            tests_count = np.random.poisson(1, 1)[0] + 1
+            for test_num in range(tests_count):
+                if test_num == 0:
+                    specimen_date = copy(infection_date)
+                else:
+                    specimen_date = current_date + timedelta(days=np.random.randint(
+                        1, np.random.poisson(2, 1)[0] + 2
+                    ))
+
+                current_date = copy(specimen_date)
+                days_since_episode_start = (specimen_date - episode_start).days
+
+                if specimen_date > max_date:
+                     break
+
+                infections.append({
+                    'NEWNHSNO': row['NEWNHSNO'],
+                    'SPECIMEN_DATE': specimen_date,
+                    'EPISODE_NUM': episode_num,
+                    'INFECTION_NUM': infection_num,
+                    'DAYS_SINCE_EPISODE_START': days_since_episode_start
+                })
+                infection_num += 1
+
     return pd.DataFrame(infections)
+
 
 def populate_therapeutics(infections, chance=0.2):
     """Populate Table 4 (Therapeutics) based on infections data."""
