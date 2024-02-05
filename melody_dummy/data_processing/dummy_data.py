@@ -1,4 +1,5 @@
 from copy import copy
+import json
 
 import pandas as pd
 import numpy as np
@@ -111,19 +112,101 @@ def populate_therapeutics(infections, chance=0.2):
     return pd.DataFrame(therapeutics)
 
 
-def populate_hospitalisations(infections, chance=0.5):
-    """Populate Table 5 (Hospitalisations) based on infections data."""
+def generate_icd10_list(length, sample_codes, sample_chance):
+    """
+    Generates a list of ICD-10 codes.
+
+    Parameters:
+    - length: int, the number of ICD-10 codes to generate.
+    - sample_codes: list, a list of sample ICD-10 codes to potentially include.
+    - sample_chance: float, the probability (0 to 1) of including a code from the sample_codes in the list.
+
+    Returns:
+    - list of generated ICD-10 codes.
+    """
+    # Example list of ICD-10 codes to fill the list with random codes, if not picked from sample_codes
+    all_icd10_codes = ['A00', 'B00', 'C00', 'D00', 'E00', 'F00', 'G00', 'H00', 'I00', 'J00', 'K00', 'L00', 'M00', 'N00',
+                       'O00', 'P00', 'Q00', 'R00', 'S00', 'T00', 'U00', 'V00', 'W00', 'X00', 'Y00', 'Z00']
+    available_sample_codes = copy(sample_codes)
+    generated_list = []
+    for _ in range(length):
+        if available_sample_codes and np.random.rand() < sample_chance:
+            # Pick from the sample_codes
+            code = np.random.choice(available_sample_codes)
+            available_sample_codes.remove(code)
+        else:
+            # Pick from the larger set of ICD-10 codes
+            root_code = np.random.choice(all_icd10_codes)
+            code = root_code + str(np.random.randint(1, 9))
+        generated_list.append(code)
+
+    return generated_list
+
+
+def populate_hospitalisations(patients, chance=0.2):
+    """
+    Populate Table 5 (Hospitalisations).
+    """
     hospitalisations = []
-    for idx, row in infections.iterrows():
-        if np.random.rand() < chance:
+    for idx, row in patients.iterrows():
+
+        active_date = copy(row['ABDATE'])
+
+        # Random chance of hospitalisation event
+        while np.random.rand() < chance:
+            admission_date = active_date + timedelta(days=np.random.randint(1, 179))
+
+            admission_len_days = int(np.random.poisson(5, 1)[0])
+            number_of_episodes = int(np.random.poisson(1, 1)[0] + 1)
+            discharge_date = admission_date + timedelta(days=admission_len_days)
+
+            if admission_len_days == 0:
+                admission_len_binned = '<24hrs'
+            elif admission_len_days <= 7:
+                admission_len_binned = '1-7days'
+            else:
+                admission_len_binned = '>1week'
+
+            # Create diag codes
+            diag_codes = []
+            diag_code_match = False
+            for _ in range(number_of_episodes):
+                code_list = ['U071', 'U072']
+                episode_code_list = generate_icd10_list(
+                    length=np.random.randint(1, 5),
+                    sample_codes=code_list,
+                    sample_chance=0.1
+                )
+                if not diag_code_match:
+                    diag_code_match = any(item in episode_code_list for item in code_list)
+                diag_codes.append(episode_code_list)
+
+            cc_admission = np.random.choice([0, 1], p=[0.95, 0.05])
+
             hospitalisations.append({
                 'NEWNHSNO': row['NEWNHSNO'],
-                'ADMIDATE_DV': row['SPECIMEN_DATE'] + timedelta(
-                    days=np.random.randint(1, 14)),
-                'EPISODE_COUNT': np.random.randint(1, 5),
-                'ADMI_LEN': np.random.randint(1, 30)
+                'ADMIDATE_DV': admission_date,
+                'DISDATE_DV': discharge_date,
+                'EPISODE_COUNT': number_of_episodes,
+                'ADMI_LEN': admission_len_days,
+                'ADMI_LEN_BINNED': admission_len_binned,
+                'xDIAGCONCAT': json.dumps(diag_codes),
+                'xOPERCONCAT': json.dumps(diag_codes), # Reusing dummy diag codes
+                'DIAG_CODE_MATCH': diag_code_match,
+                'CC_ADMI': cc_admission,
+                'CCLevel2': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
+                'CCLevel3': int(np.floor(admission_len_days*0.3)) if cc_admission else 0,
+                'CCBasicResp': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
+                'CCAdvancedResp': int(np.floor(admission_len_days*0.2)) if cc_admission else 0,
             })
-    return pd.DataFrame(hospitalisations)
+            active_date = copy(admission_date)
+
+    hospitalisations_df = pd.DataFrame(hospitalisations)
+
+    # Remove same day duplicates
+    hospitalisations_df = hospitalisations_df.drop_duplicates(subset=['NEWNHSNO', 'ADMIDATE_DV'])
+
+    return hospitalisations_df
 
 
 def populate_deaths(hospitalisations, chance=0.3):
@@ -195,7 +278,7 @@ def create_dummy_dataframes(
     # Populating other tables based on patients
     infections = populate_infections(patients, chance=infection_chance)
     therapeutics = populate_therapeutics(infections, chance=therapeutic_chance)
-    hospitalisations = populate_hospitalisations(infections, chance=hospitalisation_chance)
+    hospitalisations = populate_hospitalisations(patients, chance=hospitalisation_chance)
     deaths = populate_deaths(hospitalisations, chance=death_chance)
 
     # Convert all datetime columns to date-only format
