@@ -1,3 +1,5 @@
+import os
+
 from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
@@ -105,11 +107,26 @@ class Deaths(Base):
     patient = relationship("Patients", back_populates="death")
 
 
+def get_yes_or_no_input(prompt="Please enter 'y' for yes or 'n' for no: "):
+    while True:
+        user_input = input(prompt).lower()  # Convert to lowercase to make the check case-insensitive
+        if user_input == 'y':
+            return True
+        elif user_input == 'n':
+            return False
+        else:
+            print("Invalid input. Please enter 'y' for yes or 'n' for no.")
+
+
 # Function to create the database and tables
 def create_database(conn_string, overwrite=False):
+    manager = DBEngineContextManager(conn_string, db_should_exist=False)
+    if not overwrite and manager.exists:
+        raise FileExistsError(f"Database already exists at {conn_string}. Set overwrite=True to replace it.")
+
     print(f"Creating database at {conn_string}")
-    with DBEngineContextManager(conn_string, db_should_exist=False) as engine:
-        if overwrite:
+    with manager as engine:
+        if overwrite and get_yes_or_no_input("WARNING Overwriting existing DB, proceed? (y/n):"):
             print("Dropping existing tables")
             try:
                 Base.metadata.drop_all(engine)

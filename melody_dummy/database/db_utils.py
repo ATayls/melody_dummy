@@ -20,11 +20,18 @@ class DBEngineContextManager:
         self.db_should_exist = db_should_exist
         self.engine: Optional[engine.Engine] = None
 
-    def __enter__(self) -> engine.Engine:
+    @property
+    def exists(self) -> bool:
         if self.is_sqlite:
             db_path = self.conn_string.split("///")[1]
-            if not os.path.exists(db_path) and self.db_should_exist:
-                raise FileNotFoundError(f"SQLite database does not exist at {db_path}")
+            return os.path.exists(db_path)
+        # Add logic for other DB types if needed
+        else:
+            raise ValueError("Unable to check if DB exists. Currently No integrations with other DB types.")
+
+    def __enter__(self) -> engine.Engine:
+        if not self.exists and self.db_should_exist:
+            raise FileNotFoundError(f"Database does not exist at {self.conn_string}")
 
         self.engine = create_engine(self.conn_string)
         return self.engine

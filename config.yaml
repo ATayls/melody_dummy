@@ -1,5 +1,5 @@
 database:
-  db_filename: 'hospital_data.db'
+  db_filename: 'hospital_data_2.db'
   overwrite: True
 
 dummy_data:
