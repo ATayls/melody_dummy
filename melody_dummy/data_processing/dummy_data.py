@@ -224,20 +224,23 @@ def populate_deaths(hospitalisations, code_list, chance=0.3):
     deaths = []
     for idx, row in last_hospitalisations.iterrows():
         if np.random.rand() < chance:
-            icd10 = generate_icd10_list(
-                length=1,
+            # Generate underlying cause of death
+            icd10_list = generate_icd10_list(
+                length=3,
                 sample_codes=code_list,
                 sample_chance=0.2
-            )[0]
-            code_mentioned = icd10 in code_list
+            )
+            icdu = icd10_list[0]
+            code_mentioned = any([code in icd10_list for code in code_list])
+            code_underlying = icdu in code_list
             deaths.append({
                 'NEWNHSNO': row['NEWNHSNO'],
                 'DOD': row['ADMIDATE_DV'] + timedelta(days=np.random.randint(1, 30)),
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
-                'ICDU': icd10,
+                'ICDU': icdu,
                 'CODE_MENTIONED': code_mentioned,
-                'CODE_UNDERLYING': (np.random.choice([True, False]) if code_mentioned else False),
-                'CODE_POSITION': (np.random.choice([1, 2, 3, 4]) if code_mentioned else None)
+                'CODE_UNDERLYING': code_underlying,
+                'CODE_POSITION': next((icd10_list.index(item) + 1 for item in icd10_list if item in code_list), None)
             })
     return pd.DataFrame(deaths)
 
