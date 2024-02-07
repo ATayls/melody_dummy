@@ -231,15 +231,15 @@ def populate_deaths(hospitalisations, chance=0.3):
                 sample_codes=code_list,
                 sample_chance=0.2
             )[0]
-            covid_mentioned = icd10 in code_list
+            code_mentioned = icd10 in code_list
             deaths.append({
                 'NEWNHSNO': row['NEWNHSNO'],
                 'DOD': row['ADMIDATE_DV'] + timedelta(days=np.random.randint(1, 30)),
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
                 'ICD10': icd10,
-                'COVID_MENTIONED': covid_mentioned,
-                'COVID_UNDERLYING': (np.random.choice([True,
-                                     False]) if covid_mentioned else False)
+                'CODE_MENTIONED': code_mentioned,
+                'CODE_UNDERLYING': (np.random.choice([True,
+                                     False]) if code_mentioned else False)
             })
     return pd.DataFrame(deaths)
 

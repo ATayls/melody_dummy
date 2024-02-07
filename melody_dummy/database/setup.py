@@ -95,12 +95,12 @@ class Deaths(Base):
     DOD = Column(Date, nullable=False)
     ICDU_GROUP = Column(String(50), nullable=True)
     ICD10 = Column(String(5), nullable=True)
-    COVID_MENTIONED = Column(Boolean, nullable=False)
-    COVID_UNDERLYING = Column(Boolean, nullable=False)
+    CODE_MENTIONED = Column(Boolean, nullable=False)
+    CODE_UNDERLYING = Column(Boolean, nullable=False)
 
     __table_args__ = (
-        CheckConstraint('NOT COVID_UNDERLYING OR COVID_MENTIONED',
-                        name='check_covid_mentioned_if_underlying'),
+        CheckConstraint('NOT CODE_UNDERLYING OR CODE_MENTIONED',
+                        name='check_code_mentioned_if_underlying'),
     )
 
     # Relationship
