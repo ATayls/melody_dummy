@@ -236,8 +236,8 @@ def populate_deaths(hospitalisations, code_list, chance=0.3):
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
                 'ICD10': icd10,
                 'CODE_MENTIONED': code_mentioned,
-                'CODE_UNDERLYING': (np.random.choice([True,
-                                     False]) if code_mentioned else False)
+                'CODE_UNDERLYING': (np.random.choice([True, False]) if code_mentioned else False),
+                'CODE_POSITION': (np.random.choice([1, 2, 3, 4]) if code_mentioned else None)
             })
     return pd.DataFrame(deaths)
 

@@ -97,10 +97,13 @@ class Deaths(Base):
     ICD10 = Column(String(5), nullable=True)
     CODE_MENTIONED = Column(Boolean, nullable=False)
     CODE_UNDERLYING = Column(Boolean, nullable=False)
+    CODE_POSITION = Column(Integer, nullable=True)
 
     __table_args__ = (
         CheckConstraint('NOT CODE_UNDERLYING OR CODE_MENTIONED',
                         name='check_code_mentioned_if_underlying'),
+        CheckConstraint('CODE_MENTIONED = (CODE_POSITION IS NOT NULL)',
+                        name='check_code_position_existance_based_on_code_mentioned')
     )
 
     # Relationship
