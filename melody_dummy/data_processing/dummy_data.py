@@ -143,7 +143,7 @@ def generate_icd10_list(length, sample_codes, sample_chance):
     return generated_list
 
 
-def populate_hospitalisations(patients, chance=0.2):
+def populate_hospitalisations(patients, code_list, chance=0.2):
     """
     Populate Table 5 (Hospitalisations).
     """
@@ -171,7 +171,6 @@ def populate_hospitalisations(patients, chance=0.2):
             diag_codes = []
             diag_code_match = False
             for _ in range(number_of_episodes):
-                code_list = ['U071', 'U072']
                 episode_code_list = generate_icd10_list(
                     length=np.random.randint(1, 5),
                     sample_codes=code_list,
@@ -209,7 +208,7 @@ def populate_hospitalisations(patients, chance=0.2):
     return hospitalisations_df
 
 
-def populate_deaths(hospitalisations, chance=0.3):
+def populate_deaths(hospitalisations, code_list, chance=0.3):
     """
     Populate Table 6 (Deaths) based on hospitalisations data.
     Assumption in dummy data that only those that have been hospitalised can die.
@@ -225,7 +224,6 @@ def populate_deaths(hospitalisations, chance=0.3):
     deaths = []
     for idx, row in last_hospitalisations.iterrows():
         if np.random.rand() < chance:
-            code_list = ['U071']
             icd10 = generate_icd10_list(
                 length=1,
                 sample_codes=code_list,
@@ -304,6 +302,7 @@ def create_dummy_dataframes(
     n_patients = config['dummy_data']['n_patients']
     start_date = config['dummy_data']['start_date']
     end_date = config['dummy_data']['end_date']
+    code_list = config['dummy_data']['code_list']
     infection_chance = config['dummy_data']['infection_chance']
     therapeutic_chance = config['dummy_data']['therapeutic_chance']
     hospitalisation_chance = config['dummy_data']['hospitalisation_chance']
@@ -320,8 +319,8 @@ def create_dummy_dataframes(
     # Populating other tables based on patients
     infections = populate_infections(patients, chance=infection_chance)
     therapeutics = populate_therapeutics(infections, chance=therapeutic_chance)
-    hospitalisations = populate_hospitalisations(patients, chance=hospitalisation_chance)
-    deaths = populate_deaths(hospitalisations, chance=death_chance)
+    hospitalisations = populate_hospitalisations(patients, code_list, chance=hospitalisation_chance)
+    deaths = populate_deaths(hospitalisations, code_list, chance=death_chance)
 
     # Convert all datetime columns to date-only format
     patients = datetime_cols_to_date(patients)
