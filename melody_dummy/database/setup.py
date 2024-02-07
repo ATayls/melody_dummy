@@ -94,7 +94,7 @@ class Deaths(Base):
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True, unique=True)
     DOD = Column(Date, nullable=False)
     ICDU_GROUP = Column(String(50), nullable=True)
-    ICD10 = Column(String(5), nullable=True)
+    ICDU = Column(String(5), nullable=True)
     CODE_MENTIONED = Column(Boolean, nullable=False)
     CODE_UNDERLYING = Column(Boolean, nullable=False)
     CODE_POSITION = Column(Integer, nullable=True)

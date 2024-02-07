@@ -234,7 +234,7 @@ def populate_deaths(hospitalisations, code_list, chance=0.3):
                 'NEWNHSNO': row['NEWNHSNO'],
                 'DOD': row['ADMIDATE_DV'] + timedelta(days=np.random.randint(1, 30)),
                 'ICDU_GROUP': np.random.choice(['Group1', 'Group2', 'Group3']),
-                'ICD10': icd10,
+                'ICDU': icd10,
                 'CODE_MENTIONED': code_mentioned,
                 'CODE_UNDERLYING': (np.random.choice([True, False]) if code_mentioned else False),
                 'CODE_POSITION': (np.random.choice([1, 2, 3, 4]) if code_mentioned else None)
