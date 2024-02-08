@@ -69,14 +69,27 @@ def get_hospitalisations_post_infection_within_days(conn_string, days):
     """
     all_hospitalisations = get_hospitalisations_with_closest_prior_infection(conn_string)
     filtered_hospitalisations = all_hospitalisations[
-        all_hospitalisations['TIME_FROM_ADMI'] <= days
+        all_hospitalisations['INFECTION_EPISODE_START_TO_ADMI_DAYS'] <= days
     ]
     return filtered_hospitalisations
 
 
+def get_valid_hospitalisations(conn_string, days):
+    """
+    Retrieves hospitalisations either have an infection episode start within X days or
+    have a diag code match
+    """
+    all_hospitalisations = get_hospitalisations_with_closest_prior_infection(conn_string)
+    within_days = all_hospitalisations['INFECTION_EPISODE_START_TO_ADMI_DAYS'] <= days
+    all_hospitalisations[f'INFECTION_WITHIN_{days}_DAYS_PRIOR'] = within_days
+    filtered_hospitalisations = all_hospitalisations[
+        within_days | all_hospitalisations['DIAG_CODE_MATCH']
+    ]
+    return filtered_hospitalisations
+
 def get_hospitalisations_with_closest_prior_infection(conn_string):
     """
-    Retrieves hospitalisations and a column describing the closest prior infection
+    Retrieves all hospitalisations and a column describing the closest prior infection
     Inclusive of specimens taken on the same day as the hospitalisation.
     First Infection of Infection Episode only.
     :param conn_string: Database connection string
@@ -106,7 +119,7 @@ def get_hospitalisations_with_closest_prior_infection(conn_string):
         hcpi.*,
         (
             julianday(hcpi.ADMIDATE_DV) - julianday(hcpi.CLOSEST_PRIOR_EPISODE_START_DATE)
-        ) AS TIME_FROM_ADMI
+        ) AS INFECTION_EPISODE_START_TO_ADMI_DAYS
     FROM 
         HospitalisationClosestPriorInfection AS hcpi
     ;
