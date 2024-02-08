@@ -1,6 +1,7 @@
 database:
   db_filename: 'study_database.db'
   overwrite: False
+  create_views: True
 
 ingestion_pipeline:
   use_dummy_data: True

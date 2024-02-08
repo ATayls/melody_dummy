@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, Optional, Union
 
 import pandas as pd
-from sqlalchemy import create_engine, engine
+from sqlalchemy import create_engine, engine, text
 from sqlalchemy.orm import sessionmaker, Session
 
 
@@ -102,3 +102,43 @@ def sql_read_to_pandas(
             result = pd.read_sql_query(sql_statement, connection, params=params)
 
     return result
+
+
+def execute_raw_sql_file(conn_or_engine: Union[str, engine.Engine], sql_file_path: str):
+    """
+    Executes a SQL file against a database using SQLAlchemy.
+    It can accept either an existing engine instance or a connection string.
+
+    Parameters:
+    - conn_or_engine: Union[str, sa_engine.Engine]. A database connection string or an existing SQLAlchemy engine.
+    - sql_file_path: str. The path to the .sql file containing SQL commands to be executed.
+    """
+
+    # Read the SQL command from the file
+    with open(sql_file_path, 'r') as file:
+        sql_command = file.read()
+
+    # Execute the SQL command
+    execute_raw_sql(conn_or_engine, sql_command)
+
+
+def execute_raw_sql(conn_or_engine: Union[str, engine.Engine], sql_command: str):
+    """
+    Executes a raw SQL command against a database using SQLAlchemy.
+    :param conn_or_engine:  A database connection string or an existing SQLAlchemy engine.
+    :param sql_command:  The SQL command to be executed.
+    :return:
+    """
+    # Wrap the SQL command with text() for explicit execution as raw SQL
+    sql_command = text(sql_command)
+    # Check if conn_or_engine is a connection string
+    if isinstance(conn_or_engine, str):
+        with DBEngineContextManager(conn_or_engine) as DB_engine:
+            with DBSessionContextManager(DB_engine) as session:
+                session.execute(sql_command)
+    # Check if conn_or_engine is an SQLAlchemy Engine instance
+    elif isinstance(conn_or_engine, engine.Engine):
+        with DBSessionContextManager(conn_or_engine) as DB_session:
+            DB_session.execute(sql_command)
+    else:
+        raise TypeError("conn_or_engine must be either a connection string or an SQLAlchemy Engine instance.")
