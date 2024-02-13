@@ -17,14 +17,17 @@ def load_config():
 
     return config
 
-def get_db_connection_string():
+def get_db_connection_string(filename_override=None):
     """
     Creates the database connection string from the config file.
     The database file is assumed to be in the same folder as the config file.
     """
 
-    config = load_config()
-    db_filename = config['database']['db_filename']
+    if filename_override:
+        db_filename = filename_override
+    else:
+        config = load_config()
+        db_filename = config['database']['db_filename']
     config_folder = CONFIG_PATH.parent
     conn_string = f"sqlite:///{config_folder}/{db_filename}"
 
