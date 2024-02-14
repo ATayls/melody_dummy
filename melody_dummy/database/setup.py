@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, Integer, String, Date, Boolean, ForeignKey, UniqueConstraint, CheckConstraint, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import relationship
@@ -23,6 +23,7 @@ class Patients(Base):
 
     # Relationships
     demographics = relationship("Demographics", back_populates="patient", uselist=False)
+    surveydata = relationship("SurveyData", back_populates="patient", uselist=False)
     infections = relationship("Infections", back_populates="patient")
     therapeutics = relationship("Therapeutics", back_populates="patient")
     hospitalisations = relationship("Hospitalisations", back_populates="patient")
@@ -33,11 +34,52 @@ class Patients(Base):
 class Demographics(Base):
     __tablename__ = 'demographics'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
-    DOB = Column(Date, nullable=False)
-    SEX = Column(String(10), nullable=False)
+    AGE = Column(Integer, nullable=True)
+    GEND = Column(Enum('Male', 'Female', 'Other', name='gend_enum'), nullable=True)
+    ETHNICITY = Column(Enum('White', 'Asian', 'Black', 'Other', name='ethnic_enum'), nullable=True)
+    HEIGHT_CM = Column(Integer)
+    WEIGHT_KG = Column(Integer)
 
     # Relationship
     patient = relationship("Patients", back_populates="demographics")
+
+
+# Define a table with more survey data
+class SurveyData(Base):
+    __tablename__ = 'surveydata'
+    NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
+
+    # Vaccine
+    VACCDOSE_AT_TEST = Column(Integer, nullable=False)
+    VACCGROUP_AT_TEST = Column(Enum('MRNA_AZ_ONLY', 'MRNA_ONLY', 'AZ_ONLY', 'OTHER', name='vaccgroup_enum'), nullable=True)
+
+    # General
+    NADULTS = Column(Integer)
+    NCHILD = Column(Integer)
+    EMPLOYMENT = Column(Enum('Employed/Education', 'Retired or not in Employment/Education', name='employment_enum'), nullable=True)
+    WORK_SPACE_NUMBERS = Column(Enum('Alone/Home', '1-2', '3-6', '7-10', '10+', name='workspace_enum'), nullable=True)
+    WORK_TRAVEL_GROUP = Column(Enum('Private', 'Shared', 'Mix', name='worktravel_enum'), nullable=True)
+
+    # Behaviours
+    SHIELD = Column(Enum('Yes but attend work', 'Yes strict but attend work', 'Yes strict', 'No', name='shield_enum'), nullable=True)
+    FACEMASK = Column(Enum('No', 'Yes at work/school only', 'Yes other situations only', 'Yes work/school and other situations', 'Yes for other reasons', name='shield_enum'), nullable=True)
+
+    # Mental Health
+    GAD7 = Column(Integer)
+    PHQ8 = Column(Integer)
+
+    # Covid Opinions
+    COVID_INFECT = Column(Enum('Positive Test', 'Doctor Suspicions', 'Own Suspicions', 'No', name='covid_infect_enum'), nullable=True)
+    COVID_WORRIED = Column(Enum('Extremely', 'Very', 'Somewhat', 'Not Very', 'Not At All', name='covid_worried_enum'), nullable=True)
+    COVID_PERSONAL_RISK = Column(Enum('Major', 'Moderate', 'Minor', 'No', name='covid_personal_risk_enum'), nullable=True)
+    COVID_UK_RISK = Column(Enum('Major', 'Moderate', 'Minor', 'No', name='covid_uk_risk_enum'), nullable=True)
+    ST1_IMMUNITY = Column(Boolean, nullable=True)
+    ST2_AB_STATUS_IMPORTANCE = Column(Enum('Very', 'Fairly', 'Not Very', 'Not At All', name='st2_enum'), nullable=True)
+    ST3_TEST_CONCERN = Column(Enum('Very', 'Fairly', 'Not Very', 'Not At All', name='st3_enum'), nullable=True)
+    ST4_RESULT_CONCERN = Column(Enum('Very', 'Fairly', 'Not Very', 'Not At All', name='st4_enum'), nullable=True)
+
+    # Table Relationship
+    patient = relationship("Patients", back_populates="surveydata")
 
 
 # Define the Infections table
@@ -57,7 +99,7 @@ class Infections(Base):
 class Therapeutics(Base):
     __tablename__ = 'therapeutics'
     NEWNHSNO = Column(Integer, ForeignKey('patients.NEWNHSNO'), primary_key=True)
-    THERAPEUTIC_NUM = Column(Integer, nullable=False, primary_key=True) # Make SPECIMEN_NUM part of the primary key
+    THERAPEUTIC_NUM = Column(Integer, nullable=False, primary_key=True) # Make THERAPEUTIC_NUM part of the primary key
     RECEIVED = Column(Date, nullable=False)
     INTERVENTION = Column(String(20), nullable=False)
     __table_args__ = (UniqueConstraint('NEWNHSNO', 'RECEIVED', 'INTERVENTION'),)
