@@ -21,10 +21,43 @@ def create_patients_and_demographics(n, start_date='2020-01-01', end_date='2023-
 
     demographics = pd.DataFrame({
         'NEWNHSNO': range(1, n+1),
-        'DOB': pd.to_datetime(np.random.choice(pd.date_range(start='1950-01-01', end='2003-01-01', freq='D'), n)),
-        'SEX': np.random.choice(['M', 'F'], n)
+        'AGE': np.random.randint(18, 100, n),
+        'GEND': np.random.choice(['M', 'F'], n),
+        'ETHNICITY': np.random.choice(['White', 'Asian', 'Black', 'Other'], n),
+        'HEIGHT_CM': np.random.randint(140, 200, n),
+        'WEIGHT_KG': np.random.randint(40, 150, n)
     })
     return patients, demographics
+
+
+def populate_surveydata(patients):
+    """
+    Populate the SurveyData table based on patient data.
+    """
+    surveydata = pd.DataFrame({
+        'NEWNHSNO': patients['NEWNHSNO'],
+        'VACCDOSE_AT_TEST': np.random.randint(0, 4, size=len(patients)),  # Assuming 0-3 doses
+        'VACCGROUP_AT_TEST': np.random.choice(['MRNA_AZ_ONLY', 'MRNA_ONLY', 'AZ_ONLY', 'OTHER'], size=len(patients)),
+        'NADULTS': np.random.randint(1, 6, size=len(patients)),
+        'NCHILD': np.random.randint(0, 5, size=len(patients)),
+        'EMPLOYMENT': np.random.choice(['Employed/Education', 'Retired or not in Employment/Education'], size=len(patients)),
+        'WORK_SPACE_NUMBERS': np.random.choice(['Alone/Home', '1-2', '3-6', '7-10', '10+'], size=len(patients)),
+        'WORK_TRAVEL_GROUP': np.random.choice(['Private', 'Shared', 'Mix'], size=len(patients)),
+        'SHIELD': np.random.choice(['Yes but attend work', 'Yes strict but attend work', 'Yes strict', 'No'], size=len(patients)),
+        'FACEMASK': np.random.choice(['No', 'Yes at work/school only', 'Yes other situations only', 'Yes work/school and other situations', 'Yes for other reasons'], size=len(patients)),
+        'GAD7': np.random.randint(0, 22, size=len(patients)),  # GAD7 scores range from 0 to 21
+        'PHQ8': np.random.randint(0, 24, size=len(patients)),  # PHQ8 scores range from 0 to 24
+        'COVID_INFECT': np.random.choice(['Positive Test', 'Doctor Suspicions', 'Own Suspicions', 'No'], size=len(patients)),
+        'COVID_WORRIED': np.random.choice(['Extremely', 'Very', 'Somewhat', 'Not Very', 'Not At All'], size=len(patients)),
+        'COVID_PERSONAL_RISK': np.random.choice(['Major', 'Moderate', 'Minor', 'No'], size=len(patients)),
+        'COVID_UK_RISK': np.random.choice(['Major', 'Moderate', 'Minor', 'No'], size=len(patients)),
+        'ST1_IMMUNITY': np.random.choice([True, False], size=len(patients)),
+        'ST2_AB_STATUS_IMPORTANCE': np.random.choice(['Very', 'Fairly', 'Not Very', 'Not At All'], size=len(patients)),
+        'ST3_TEST_CONCERN': np.random.choice(['Very', 'Fairly', 'Not Very', 'Not At All'], size=len(patients)),
+        'ST4_RESULT_CONCERN': np.random.choice(['Very', 'Fairly', 'Not Very', 'Not At All'], size=len(patients)),
+    })
+
+    return surveydata
 
 
 def populate_infections(patients, chance=0.5):
@@ -320,6 +353,7 @@ def create_dummy_dataframes(
     )
 
     # Populating other tables based on patients
+    surveydata = populate_surveydata(patients)
     infections = populate_infections(patients, chance=infection_chance)
     therapeutics = populate_therapeutics(infections, chance=therapeutic_chance)
     hospitalisations = populate_hospitalisations(patients, code_list, chance=hospitalisation_chance)
@@ -327,6 +361,7 @@ def create_dummy_dataframes(
 
     # Convert all datetime columns to date-only format
     patients = datetime_cols_to_date(patients)
+    surveydata = datetime_cols_to_date(surveydata)
     demographics = datetime_cols_to_date(demographics)
     infections = datetime_cols_to_date(infections)
     therapeutics = datetime_cols_to_date(therapeutics)
@@ -346,6 +381,7 @@ def create_dummy_dataframes(
 
     df_dict = {
         'patients': patients,
+        'surveydata': surveydata,
         'demographics': demographics,
         'infections': infections,
         'therapeutics': therapeutics,
