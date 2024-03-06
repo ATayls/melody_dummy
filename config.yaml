@@ -27,7 +27,7 @@ dummy_data:
   code_list:
     - 'U071'
     - 'U072'
-  infection_chance: 0.5
+  infection_chance: 0.20
   therapeutic_chance: 0.2
-  hospitalisation_chance: 0.5
+  hospitalisation_chance: 0.1
   death_chance: 0.3
