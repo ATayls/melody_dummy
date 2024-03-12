@@ -32,24 +32,47 @@ def adjust_probability(probability, factor):
 
 def create_patients_and_demographics(n, start_date='2020-01-01', end_date='2023-01-01'):
     """Create Tables 1 (Patients) and 2 (Demographics) with n patients."""
-    patients = pd.DataFrame({
-        'NEWNHSNO': range(1, n+1),
-        'ABDATE': pd.to_datetime(np.random.choice(pd.date_range(start=start_date,
-                                                                end=end_date, freq='D'), n)),
-        'COHORT': np.random.choice(['RD', 'BC'], n),
-        'AB_STATUS': np.random.choice([True, False], n)
-    })
-    patients['ABDATE_6M'] = patients['ABDATE'] + timedelta(days=180)
+    patients_list = []
+    demographics_list = []
 
-    demographics = pd.DataFrame({
-        'NEWNHSNO': range(1, n+1),
-        'AGE': np.random.randint(18, 100, n),
-        'GEND': np.random.choice(['M', 'F'], n),
-        'ETHNICITY': np.random.choice(['White', 'Asian', 'Black', 'Other'], n),
-        'HEIGHT_CM': np.random.randint(140, 200, n),
-        'WEIGHT_KG': np.random.randint(40, 150, n)
-    })
-    return patients, demographics
+    for i in range(1, n+1):
+        abdate = pd.to_datetime(np.random.choice(pd.date_range(start=start_date, end=end_date, freq='D')))
+        cohort = np.random.choice(['RD', 'BC'])
+        abdate_6m = abdate + timedelta(days=180)
+        age = np.random.randint(18, 100)
+        gend = np.random.choice(['M', 'F'])
+        ethnicity = np.random.choice(['White', 'Asian', 'Black', 'Other'])
+        height_cm = np.random.randint(140, 200)
+        weight_kg = np.random.randint(40, 150)
+
+        #Todo move to config
+        ab_chance = 0.5
+        # Adjust chance so women are more likely to be AB positive
+        if gend == 'F':
+            ab_chance = adjust_probability(ab_chance, factor=10)
+
+        # Adjust chance so for every year over 60 the chance of being AB positive
+        # decreases by 5%
+        ab_chance = adjust_probability(
+            ab_chance,
+            factor=max(0.1, min(1 - (age - 60) * 0.05, 1))
+        )
+
+        ab_status = np.random.choice([True, False], p=[ab_chance, 1-ab_chance])
+
+        patients_list.append([i, abdate, cohort, ab_status, abdate_6m])
+        demographics_list.append([i, age, gend, ethnicity, height_cm, weight_kg])
+
+    patients_df = pd.DataFrame(
+        patients_list,
+        columns=['NEWNHSNO', 'ABDATE', 'COHORT', 'AB_STATUS', 'ABDATE_6M']
+    )
+    demographics_df = pd.DataFrame(
+        demographics_list,
+        columns=['NEWNHSNO', 'AGE', 'GEND', 'ETHNICITY', 'HEIGHT_CM', 'WEIGHT_KG']
+    )
+
+    return patients_df, demographics_df
 
 
 def populate_surveydata(patients):
@@ -101,49 +124,56 @@ def populate_infections(patients, chance=0.5):
         else:
             patient_chance = chance
 
-        while current_date < max_date:
-            if np.random.rand() < patient_chance:
+        # Add a confound of COHORT
+        if row['COHORT'] == 'RD':
+            patient_chance = adjust_probability(patient_chance, factor=2)
 
-                # Set infection date
-                if episode_start is None:
-                    infection_date = current_date + timedelta(days=np.random.randint(1, 180))
-                    episode_start = copy(infection_date)
-                else:
-                    infection_date = current_date + timedelta(days=np.random.randint(91, 180))
+        # Random chance of at least one infection event
+        gets_infection = np.random.rand() < patient_chance
 
-                days_since_episode_start = (infection_date - episode_start).days
+        while current_date < max_date and gets_infection:
 
-                # New episode?
-                if days_since_episode_start > 91:
-                    episode_start = copy(infection_date)
-                    episode_num += 1
-                    infection_num = 1
-
-                tests_count = np.random.poisson(1, 1)[0] + 1
-                for test_num in range(tests_count):
-                    if test_num == 0:
-                        specimen_date = copy(infection_date)
-                    else:
-                        specimen_date = current_date + timedelta(days=np.random.randint(
-                            1, np.random.poisson(2, 1)[0] + 2
-                        ))
-
-                    current_date = copy(specimen_date)
-                    days_since_episode_start = (specimen_date - episode_start).days
-
-                    if specimen_date > max_date:
-                         break
-
-                    infections.append({
-                        'NEWNHSNO': row['NEWNHSNO'],
-                        'SPECIMEN_DATE': specimen_date,
-                        'EPISODE_NUM': episode_num,
-                        'INFECTION_NUM': infection_num,
-                        'DAYS_SINCE_EPISODE_START': days_since_episode_start
-                    })
-                    infection_num += 1
+            # Set infection date
+            if episode_start is None:
+                infection_date = current_date + timedelta(days=np.random.randint(1, 180))
+                episode_start = copy(infection_date)
             else:
-                current_date += timedelta(days=7)
+                infection_date = current_date + timedelta(days=np.random.randint(91, 180))
+
+            days_since_episode_start = (infection_date - episode_start).days
+
+            # New episode?
+            if days_since_episode_start > 91:
+                episode_start = copy(infection_date)
+                episode_num += 1
+                infection_num = 1
+
+            tests_count = np.random.poisson(1, 1)[0] + 1
+            for test_num in range(tests_count):
+                if test_num == 0:
+                    specimen_date = copy(infection_date)
+                else:
+                    specimen_date = current_date + timedelta(days=np.random.randint(
+                        1, np.random.poisson(2, 1)[0] + 2
+                    ))
+
+                current_date = copy(specimen_date)
+                days_since_episode_start = (specimen_date - episode_start).days
+
+                if specimen_date > max_date:
+                     break
+
+                infections.append({
+                    'NEWNHSNO': row['NEWNHSNO'],
+                    'SPECIMEN_DATE': specimen_date,
+                    'EPISODE_NUM': episode_num,
+                    'INFECTION_NUM': infection_num,
+                    'DAYS_SINCE_EPISODE_START': days_since_episode_start
+                })
+                infection_num += 1
+
+            # Update gets_infection for second occurance
+            gets_infection = np.random.rand() < patient_chance
 
     return pd.DataFrame(infections)
 
@@ -222,56 +252,58 @@ def populate_hospitalisations(patients, code_list, chance=0.2):
         else:
             patient_chance = chance
 
-        while active_date < row['ABDATE_6M']:
-            # Random chance of hospitalisation event
-            if np.random.rand() < patient_chance:
-                admission_date = active_date + timedelta(days=np.random.randint(1, 179))
+        # Random chance of at least one hospitalisation event
+        has_hospitalisation = np.random.rand() < patient_chance
 
-                admission_len_days = int(np.random.poisson(5, 1)[0])
-                number_of_episodes = int(np.random.poisson(1, 1)[0] + 1)
-                discharge_date = admission_date + timedelta(days=admission_len_days)
+        while active_date < row['ABDATE_6M'] and has_hospitalisation:
+            admission_date = active_date + timedelta(days=np.random.randint(1, 179))
 
-                if admission_len_days == 0:
-                    admission_len_binned = '<24hrs'
-                elif admission_len_days <= 7:
-                    admission_len_binned = '1-7days'
-                else:
-                    admission_len_binned = '>1week'
+            admission_len_days = int(np.random.poisson(5, 1)[0])
+            number_of_episodes = int(np.random.poisson(1, 1)[0] + 1)
+            discharge_date = admission_date + timedelta(days=admission_len_days)
 
-                # Create diag codes
-                diag_codes = []
-                diag_code_match = False
-                for _ in range(number_of_episodes):
-                    episode_code_list = generate_icd10_list(
-                        length=np.random.randint(1, 5),
-                        sample_codes=code_list,
-                        sample_chance=0.1
-                    )
-                    if not diag_code_match:
-                        diag_code_match = any(item in episode_code_list for item in code_list)
-                    diag_codes.append(episode_code_list)
-
-                cc_admission = np.random.choice([0, 1], p=[0.95, 0.05])
-
-                hospitalisations.append({
-                    'NEWNHSNO': row['NEWNHSNO'],
-                    'ADMIDATE_DV': admission_date,
-                    'DISDATE_DV': discharge_date,
-                    'EPISODE_COUNT': number_of_episodes,
-                    'ADMI_LEN': admission_len_days,
-                    'ADMI_LEN_BINNED': admission_len_binned,
-                    'xDIAGCONCAT': json.dumps(diag_codes),
-                    'xOPERCONCAT': json.dumps(diag_codes), # Reusing dummy diag codes
-                    'DIAG_CODE_MATCH': diag_code_match,
-                    'CC_ADMI': cc_admission,
-                    'CCLevel2': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
-                    'CCLevel3': int(np.floor(admission_len_days*0.3)) if cc_admission else 0,
-                    'CCBasicResp': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
-                    'CCAdvancedResp': int(np.floor(admission_len_days*0.2)) if cc_admission else 0,
-                })
-                active_date = copy(admission_date)
+            if admission_len_days == 0:
+                admission_len_binned = '<24hrs'
+            elif admission_len_days <= 7:
+                admission_len_binned = '1-7days'
             else:
-                active_date += timedelta(days=7)
+                admission_len_binned = '>1week'
+
+            # Create diag codes
+            diag_codes = []
+            diag_code_match = False
+            for _ in range(number_of_episodes):
+                episode_code_list = generate_icd10_list(
+                    length=np.random.randint(1, 5),
+                    sample_codes=code_list,
+                    sample_chance=0.1
+                )
+                if not diag_code_match:
+                    diag_code_match = any(item in episode_code_list for item in code_list)
+                diag_codes.append(episode_code_list)
+
+            cc_admission = np.random.choice([0, 1], p=[0.95, 0.05])
+
+            hospitalisations.append({
+                'NEWNHSNO': row['NEWNHSNO'],
+                'ADMIDATE_DV': admission_date,
+                'DISDATE_DV': discharge_date,
+                'EPISODE_COUNT': number_of_episodes,
+                'ADMI_LEN': admission_len_days,
+                'ADMI_LEN_BINNED': admission_len_binned,
+                'xDIAGCONCAT': json.dumps(diag_codes),
+                'xOPERCONCAT': json.dumps(diag_codes), # Reusing dummy diag codes
+                'DIAG_CODE_MATCH': diag_code_match,
+                'CC_ADMI': cc_admission,
+                'CCLevel2': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
+                'CCLevel3': int(np.floor(admission_len_days*0.3)) if cc_admission else 0,
+                'CCBasicResp': int(np.floor(admission_len_days*0.5)) if cc_admission else 0,
+                'CCAdvancedResp': int(np.floor(admission_len_days*0.2)) if cc_admission else 0,
+            })
+            active_date = copy(admission_date)
+
+            # Update has_hospitalisation for second occurrence
+            has_hospitalisation = np.random.rand() < patient_chance
 
     hospitalisations_df = pd.DataFrame(hospitalisations)
 
@@ -338,7 +370,9 @@ def drop_events_after_deaths(event_df_in, deaths_df_in, event_date_col, death_da
 
     # Merge and filter
     merged_df = pd.merge(event_df, deaths_df[['NEWNHSNO', death_date_col]], on='NEWNHSNO', how='left')
-    filtered_df = merged_df[merged_df[event_date_col] <= merged_df[death_date_col]]
+    filtered_df = merged_df[
+        (merged_df[event_date_col] <= merged_df[death_date_col]) | (pd.isna(merged_df[death_date_col]))
+    ]
 
     # Drop the death date column from the filtered dataframe to return to original event_df structure
     return filtered_df[event_df_in.columns]
